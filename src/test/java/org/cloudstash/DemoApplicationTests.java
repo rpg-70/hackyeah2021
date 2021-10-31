@@ -1,4 +1,4 @@
-package com.example.cloudstashproject;
+package org.cloudstash;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

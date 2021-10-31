@@ -1,13 +1,13 @@
-package com.example.cloudstashproject;
+package org.cloudstash;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class DemoApplication {
+public class CloudStashApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(DemoApplication.class, args);
+		SpringApplication.run(CloudStashApplication.class, args);
 	}
 
 }

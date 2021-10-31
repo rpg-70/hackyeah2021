@@ -1,0 +1,3 @@
+cloudstash:
+  version: 1.0
+  env: dev
