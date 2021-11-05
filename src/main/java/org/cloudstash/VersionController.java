@@ -17,6 +17,6 @@ public class VersionController {
 
     @GetMapping("/version")
     public String hello() {
-        return "CloudStash v" + version + "-" + env;
+        return "!!CloudStash v" + version + "-" + env;
     }
 }
