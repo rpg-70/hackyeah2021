@@ -1,4 +1,4 @@
-package org.cloudstash;
+package org.hackyeah;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

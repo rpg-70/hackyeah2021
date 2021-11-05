@@ -1,13 +1,13 @@
-package org.cloudstash;
+package org.hackyeah;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class CloudStashApplication {
+public class HackYeahApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(CloudStashApplication.class, args);
+		SpringApplication.run(HackYeahApplication.class, args);
 	}
 
 }

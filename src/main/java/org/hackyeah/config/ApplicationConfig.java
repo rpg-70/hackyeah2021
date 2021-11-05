@@ -1,4 +1,4 @@
-package org.cloudstash.config;
+package org.hackyeah.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
