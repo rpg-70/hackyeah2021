@@ -1,2 +1,24 @@
-search:
+modes:
+  - searchLocation
+  - locationDetail
+
+searchLocationMode:
+  locationGroups:
+    - BIG_BUSINESS
+    - SMALL_BUSINESS
+    - SERVICES
+    - LIFE
+  smallBusiness:
+    - Piekarnia
+    - Cukiernia
+    - Kawiarnia
+    - Herbaciarnia
+    - Sklep spożywczy
+    - Sklep odzieżowy
+    - Sklep monopolowy
+    - Sklep wielobranżowy
+    - Kiosk z prasą
+    - Punkt apteczny
+    - Kwiaciarnia
+
 
