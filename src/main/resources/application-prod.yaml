@@ -1,2 +1,6 @@
 app:
   env: prod
+
+spring:
+  datasource:
+    url: ${DATABASE_URL}
