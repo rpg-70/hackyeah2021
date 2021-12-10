@@ -32,7 +32,7 @@ public class VersionController {
         String imageData = Base64.getEncoder().encodeToString(IOUtils.toByteArray(getClass().getResourceAsStream("/img/waiting.gif")));
 
         return body(
-                h1("Ready for HackYeah 2021? ;-)"),
+                h1("Ready for HackYeah 2021? ;-) - odgrzany"),
                 img().withSrc("data:image/gif;base64, " + imageData),
                 p("Backendzik już czeka :)"),
                 p(version())
