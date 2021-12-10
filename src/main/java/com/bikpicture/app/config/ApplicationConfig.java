@@ -1,4 +1,4 @@
-package org.hackyeah.config;
+package com.bikpicture.app.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

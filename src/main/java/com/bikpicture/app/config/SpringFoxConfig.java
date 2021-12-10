@@ -1,4 +1,4 @@
-package org.hackyeah.config;
+package com.bikpicture.app.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
