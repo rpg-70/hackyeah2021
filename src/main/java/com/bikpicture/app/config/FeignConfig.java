@@ -9,10 +9,11 @@ import org.apache.http.ssl.TrustStrategy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.util.ResourceUtils;
 
-import javax.net.ssl.*;
-import java.io.File;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import java.io.InputStream;
+import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -47,12 +48,15 @@ public class FeignConfig {
             }
         };
         ResourceLoader resourceLoader = new DefaultResourceLoader();
+        InputStream inputStream = resourceLoader.getResource(CERT_PATH).getInputStream();
         char[] allPassword = CERT_PASS.toCharArray();
+        KeyStore keystore = KeyStore.getInstance("PKCS12");
+        keystore.load(inputStream, allPassword);
         SSLContext sslContext = null;
         sslContext = SSLContextBuilder
                 .create()
                 .setKeyStoreType("PKCS12")
-                .loadKeyMaterial(resourceLoader.getResource(CERT_PATH).getFile(), allPassword, allPassword)
+                .loadKeyMaterial(keystore, allPassword)
                 .loadTrustMaterial(acceptingTrustStrategy)
                 .build();
         return sslContext.getSocketFactory();
