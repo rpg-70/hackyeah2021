@@ -6,11 +6,13 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Profile({"dev", "prod"})
 @RestController
@@ -39,7 +41,7 @@ public class AutocompleteController {
 
     @CrossOrigin
     @GetMapping("/autocomplete/modes/searchLocation/smallBusiness")
-    public List<String> getSearchLocationGroupsSmallBusiness() {
-        return autocomplete.getSearchLocationMode().getSmallBusiness();
+    public List<String> getSearchLocationGroupsSmallBusiness(@RequestParam String query) {
+        return autocomplete.getSearchLocationMode().getSmallBusiness().stream().filter(s->s.contains(query)).collect(Collectors.toList());
     }
 }
