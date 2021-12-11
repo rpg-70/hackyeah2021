@@ -11,8 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +36,7 @@ public class ScoringController {
     public ResponseEntity getScoreForPersonalLocation(
             @RequestParam String streetName,
             @RequestParam String streetNumber,
-            @RequestParam(required = false, defaultValue = "1000") int radius,
+            @RequestParam(required = false, defaultValue = "100") int radius,
             @RequestParam(required = false) List<String> keywords
     ) throws InterruptedException {
         ResponseDto addressDetails = placesApi.getAddressDetails(String.format("%s %s %s", streetName, streetNumber, CITY));
@@ -49,37 +49,62 @@ public class ScoringController {
         List<Integer> numbersOfPlaces = new ArrayList<>();
         PersonalLocationResponseDto response = new PersonalLocationResponseDto();
         response.setCoordinates(new ArrayList<>());
-        for(String keyword : keywords) {
+        for (int i = 0; i < keywords.size(); i++) {
+            String keyword = keywords.get(i);
             int numberOfPlaces = 0;
             do {
-                ResponseDto nearbyPlaces = placesApi.findNearbyPlaces(String.format("%s,%s", latitude, longitude), radius, null, keyword, pageToken);
+                ResponseDto nearbyPlaces;
+                if(pageToken == null) {
+                    nearbyPlaces = placesApi.findNearbyPlaces(String.format("%s,%s", latitude, longitude), radius, null, keyword);
+                } else {
+                    nearbyPlaces = placesApi.findNearbyPlaces(pageToken);
+                }
                 pageToken = nearbyPlaces.getNext_page_token();
                 resultSize = nearbyPlaces.getResults().size();
                 numberOfPlaces += resultSize;
-                List<AbstractMap.SimpleEntry> places = nearbyPlaces.getResults().stream().map(result -> {
+                List<PersonalLocationResponseDto.Coordinates> places = nearbyPlaces.getResults().stream().map(result -> {
                     Map<String, Map> geometry2 = (Map) result.get("geometry");
                     Map location2 = geometry2.get("location");
-                    return new AbstractMap.SimpleEntry(location2.get("lat"), location2.get("lng"));
+                    return PersonalLocationResponseDto.Coordinates.builder()
+                            .latitude((Double) location2.get("lat"))
+                            .longitude((Double) location2.get("lng"))
+                            .keyword(keyword)
+                            .name((String) result.get("name"))
+                            .build();
                 }).collect(Collectors.toList());
-                List<PersonalLocationResponseDto.Coordinates> tempCoordinates = places.stream()
-                        .map(place -> PersonalLocationResponseDto.Coordinates.builder()
-                                    .latitude((Double) place.getKey())
-                                    .longitude((Double) place.getValue())
-                                    .keyword(keyword)
-                                    .build())
-                        .collect(Collectors.toList());
-                response.getCoordinates().addAll(tempCoordinates);
+                response.getCoordinates().addAll(places);
                 if (resultSize >= PlacesApi.PAGE_SIZE) {
-                TimeUnit.SECONDS.sleep(PlacesApi.TIMEOUT);
+                    TimeUnit.SECONDS.sleep(PlacesApi.TIMEOUT);
                 }
             } while (numberOfPlaces >= MAX_PLACES || resultSize >= PlacesApi.PAGE_SIZE);
             numbersOfPlaces.add(numberOfPlaces);
         }
-        response.setScore(numbersOfPlaces.stream()
+
+        Map<Integer, Integer> numbersWithWeights = new HashMap<>();
+        for (int i = 0; i < numbersOfPlaces.size(); i++) {
+            int value = numbersOfPlaces.get(i);
+            int weight = (numbersOfPlaces.size() - i) * (numbersOfPlaces.size() - i);
+            numbersWithWeights.put(weight, value);
+        }
+        /*
+        double score = numbersOfPlaces.stream()
                 .mapToInt(Integer::intValue)
                 .average()
-                .getAsDouble());
+                .getAsDouble();
+        */
+        double score = calculateWeightedAverage(numbersWithWeights);
+        response.setScore(score);
         return ResponseEntity.ok(response);
+    }
+
+    static double calculateWeightedAverage(Map<Integer, Integer> map) {
+        double num = 0;
+        double denom = 0;
+        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+            num += entry.getValue() * entry.getKey();
+            denom += entry.getKey();
+        }
+        return num / denom;
     }
 
     @GetMapping(path = "/location/business")

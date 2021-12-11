@@ -16,5 +16,6 @@ public class PersonalLocationResponseDto {
         private double latitude;
         private double longitude;
         private String keyword;
+        private String name;
     }
 }

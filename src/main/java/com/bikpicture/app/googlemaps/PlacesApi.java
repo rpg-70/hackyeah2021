@@ -15,8 +15,12 @@ public interface PlacesApi {
             @RequestParam String location,
             @RequestParam(required = false) int radius,
             @RequestParam(required = false) PlacesTypes type,
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String pagetoken
+            @RequestParam(required = false) String keyword
+    );
+
+    @GetMapping(path = "place/nearbysearch/json")
+    ResponseDto findNearbyPlaces(
+            @RequestParam String pagetoken
     );
 
     @GetMapping(path = "place/findplacefromtext/json?inputtype=textquery&fields=name")
