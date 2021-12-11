@@ -7,9 +7,12 @@ import feign.Retryer;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.ResourceUtils;
 
 import javax.net.ssl.*;
+import java.io.File;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -43,12 +46,13 @@ public class FeignConfig {
                 return true;
             }
         };
+        ResourceLoader resourceLoader = new DefaultResourceLoader();
         char[] allPassword = CERT_PASS.toCharArray();
         SSLContext sslContext = null;
         sslContext = SSLContextBuilder
                 .create()
                 .setKeyStoreType("PKCS12")
-                .loadKeyMaterial(ResourceUtils.getFile(CERT_PATH), allPassword, allPassword)
+                .loadKeyMaterial(resourceLoader.getResource(CERT_PATH).getFile(), allPassword, allPassword)
                 .loadTrustMaterial(acceptingTrustStrategy)
                 .build();
         return sslContext.getSocketFactory();
