@@ -19,6 +19,12 @@ public interface PlacesApi {
             @RequestParam(required = false) String pagetoken
     );
 
+    @GetMapping(path = "place/findplacefromtext/json?inputtype=textquery&fields=name")
+    ResponseDto findPlacesFromText(
+            @RequestParam String input,
+            @RequestParam(required = false) String locationbias
+    );
+
     @GetMapping(path = "/geocode/json")
     ResponseDto getAddressDetails(
             @RequestParam String address

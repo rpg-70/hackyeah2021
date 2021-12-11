@@ -3,7 +3,6 @@ package com.bikpicture.app.scoring;
 import com.bikpicture.app.bik.AddressDto;
 import com.bikpicture.app.bik.BikApi;
 import com.bikpicture.app.googlemaps.PlacesApi;
-import com.bikpicture.app.googlemaps.PlacesTypes;
 import com.bikpicture.app.googlemaps.ResponseDto;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -32,34 +34,41 @@ public class ScoringController {
 
     @GetMapping(path = "/location/personal")
     public ResponseEntity getScoreForPersonalLocation(
-            @RequestParam double latitude,
-            @RequestParam double longitude,
+            @RequestParam String streetName,
+            @RequestParam String streetNumber,
             @RequestParam(required = false, defaultValue = "1000") int radius,
-            @RequestParam(required = false) PlacesTypes type,
-            @RequestParam(required = false) String keyword
-    ) {
-        try {
+            @RequestParam(required = false) List<String> keywords
+    ) throws InterruptedException {
+        ResponseDto addressDetails = placesApi.getAddressDetails(String.format("%s %s %s", streetName, streetNumber, CITY));
+        Map<String, Map> geometry = (Map) addressDetails.getResults().get(0).get("geometry");
+        Map location = geometry.get("location");
+        double latitude = (double) location.get("lat");
+        double longitude =(double) location.get("lng");
+        int resultSize;
+        String pageToken = null;
+        List<Integer> numbersOfPlaces = new ArrayList<>();
+        for(String keyword : keywords) {
             int numberOfPlaces = 0;
-            int resultSize;
-            String pageToken = null;
             do {
-                ResponseDto responseDto = placesApi.findNearbyPlaces(String.format("%s,%s", latitude, longitude), radius, type, keyword, pageToken);
-                pageToken = responseDto.getNext_page_token();
-                resultSize = responseDto.getResults().size();
+                ResponseDto nearbyPlaces = placesApi.findNearbyPlaces(String.format("%s,%s", latitude, longitude), radius, null, keyword, pageToken);
+                pageToken = nearbyPlaces.getNext_page_token();
+                resultSize = nearbyPlaces.getResults().size();
                 numberOfPlaces += resultSize;
                 TimeUnit.SECONDS.sleep(PlacesApi.TIMEOUT);
             } while (numberOfPlaces >= MAX_PLACES || resultSize >= PlacesApi.PAGE_SIZE);
-            return ResponseEntity.ok(numberOfPlaces);
-        } catch (FeignException | InterruptedException e) {
-            log.error(e.getMessage());
-            return ResponseEntity.badRequest().body(e.getMessage());
+            numbersOfPlaces.add(numberOfPlaces);
         }
+        return ResponseEntity.ok(numbersOfPlaces.stream()
+                .mapToInt(Integer::intValue)
+                .average()
+                .getAsDouble()
+        );
     }
 
     @GetMapping(path = "/location/business")
     public ResponseEntity getScoreForBusinessLocation(
             @RequestParam String streetName,
-            @RequestParam int streetNumber
+            @RequestParam String streetNumber
     ) throws IOException {
         ResponseDto responseDto = placesApi.getAddressDetails(String.format("%s %s %s", streetName, streetNumber, CITY));
         String postalCode = responseDto.getResults()
