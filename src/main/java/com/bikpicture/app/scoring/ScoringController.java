@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(path = "/scoring")
@@ -47,6 +49,8 @@ public class ScoringController {
         int resultSize;
         String pageToken = null;
         List<Integer> numbersOfPlaces = new ArrayList<>();
+        PersonalLocationResponseDto response = new PersonalLocationResponseDto();
+        response.setCoordinates(new ArrayList<>());
         for(String keyword : keywords) {
             int numberOfPlaces = 0;
             do {
@@ -54,15 +58,30 @@ public class ScoringController {
                 pageToken = nearbyPlaces.getNext_page_token();
                 resultSize = nearbyPlaces.getResults().size();
                 numberOfPlaces += resultSize;
+                List<AbstractMap.SimpleEntry> places = nearbyPlaces.getResults().stream().map(result -> {
+                    Map<String, Map> geometry2 = (Map) result.get("geometry");
+                    Map location2 = geometry2.get("location");
+                    return new AbstractMap.SimpleEntry(location2.get("lat"), location2.get("lng"));
+                }).collect(Collectors.toList());
+                List<PersonalLocationResponseDto.Coordinates> tempCoordinates = places.stream()
+                        .map(place -> PersonalLocationResponseDto.Coordinates.builder()
+                                    .latitude((Double) place.getKey())
+                                    .longitude((Double) place.getValue())
+                                    .keyword(keyword)
+                                    .build())
+                        .collect(Collectors.toList());
+                response.getCoordinates().addAll(tempCoordinates);
+                if (resultSize >= PlacesApi.PAGE_SIZE) {
                 TimeUnit.SECONDS.sleep(PlacesApi.TIMEOUT);
+                }
             } while (numberOfPlaces >= MAX_PLACES || resultSize >= PlacesApi.PAGE_SIZE);
             numbersOfPlaces.add(numberOfPlaces);
         }
-        return ResponseEntity.ok(numbersOfPlaces.stream()
+        response.setScore(numbersOfPlaces.stream()
                 .mapToInt(Integer::intValue)
                 .average()
-                .getAsDouble()
-        );
+                .getAsDouble());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping(path = "/location/business")
