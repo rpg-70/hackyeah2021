@@ -14,7 +14,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public class FeignConfig {
-    private static final String CERT_PATH = "classpath:mentorzyBIK.pfx";
+    private static final String CERT_PATH = "classpath:mentorzyBIK";
     private static final String CERT_PASS = "P6Lqeukbc2kT";
 
     @Bean
