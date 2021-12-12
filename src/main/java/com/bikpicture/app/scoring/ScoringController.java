@@ -24,7 +24,7 @@ public class ScoringController {
     private final PlacesApi placesApi;
     private final BikApi bikApi;
 
-    private final static int MAX_PLACES = 100;
+    private final static int MAX_PLACES = 60;
     private final static String CITY = "Łódź";
 
     private final static String BIK_KEY = "36b99ed9ad5743a5a62be4a2bb5eb465";
@@ -60,13 +60,15 @@ public class ScoringController {
                 }
                 if (nearbyPlaces.getResults().size() == 0 ||
                         nearbyPlaces.getResults().get(0).get("place_id").equals(lastId)) {
-                    log.warn(String.format("Next token is not ready yet, waiting %s ms", timeout));
+                    timeout /= 2;
+                    log.warn(String.format("Next token is not ready yet, waiting additional %s ms", timeout));
                     TimeUnit.MILLISECONDS.sleep(timeout);
                     continue;
                 } else {
                     log.info(String.format("Got %s results", nearbyPlaces.getResults().size()));
                     log.info(String.format("%s...", nearbyPlaces.getResults().get(0).get("name")));
                 }
+                timeout = PlacesApi.TIMEOUT;
                 lastId = (String) nearbyPlaces.getResults().get(0).get("place_id");
                 pageToken = nearbyPlaces.getNext_page_token();
                 resultSize = nearbyPlaces.getResults().size();
@@ -85,14 +87,14 @@ public class ScoringController {
                 if (resultSize >= PlacesApi.PAGE_SIZE) {
                     TimeUnit.MILLISECONDS.sleep(timeout);
                 }
-            } while (numberOfPlaces >= MAX_PLACES || resultSize >= PlacesApi.PAGE_SIZE);
+            } while (resultSize == PlacesApi.PAGE_SIZE && numberOfPlaces < MAX_PLACES);
             numbersOfPlaces.add(numberOfPlaces);
         }
 
-        Map<Integer, Integer> numbersWithWeights = new HashMap<>();
+        Map<Integer, Double> numbersWithWeights = new HashMap<>();
         for (int i = 0; i < numbersOfPlaces.size(); i++) {
-            int value = numbersOfPlaces.get(i);
-            int weight = (numbersOfPlaces.size() - i) * (numbersOfPlaces.size() - i);
+            double value = numbersOfPlaces.get(i);
+            int weight = (numbersOfPlaces.size() - i);
             numbersWithWeights.put(weight, value);
         }
         /*
@@ -110,10 +112,10 @@ public class ScoringController {
         return ResponseEntity.ok(response);
     }
 
-    static double calculateWeightedAverage(Map<Integer, Integer> map) {
+    static double calculateWeightedAverage(Map<Integer, Double> map) {
         double num = 0;
         double denom = 0;
-        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+        for (Map.Entry<Integer, Double> entry : map.entrySet()) {
             num += entry.getValue() * entry.getKey();
             denom += entry.getKey();
         }
