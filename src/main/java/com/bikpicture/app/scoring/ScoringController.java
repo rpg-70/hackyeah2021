@@ -11,10 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -44,11 +41,13 @@ public class ScoringController {
         Map location = geometry.get("location");
         double latitude = (double) location.get("lat");
         double longitude =(double) location.get("lng");
-        int resultSize;
+        int resultSize = 0;
         String pageToken = null;
+        String lastId = null;
         List<Integer> numbersOfPlaces = new ArrayList<>();
         PersonalLocationResponseDto response = new PersonalLocationResponseDto();
         response.setCoordinates(new ArrayList<>());
+        int timeout = PlacesApi.TIMEOUT;
         for (int i = 0; i < keywords.size(); i++) {
             String keyword = keywords.get(i);
             int numberOfPlaces = 0;
@@ -59,6 +58,16 @@ public class ScoringController {
                 } else {
                     nearbyPlaces = placesApi.findNearbyPlaces(pageToken);
                 }
+                if (nearbyPlaces.getResults().size() == 0 ||
+                        nearbyPlaces.getResults().get(0).get("place_id").equals(lastId)) {
+                    log.warn(String.format("Next token is not ready yet, waiting %s ms", timeout));
+                    TimeUnit.MILLISECONDS.sleep(timeout);
+                    continue;
+                } else {
+                    log.info(String.format("Got %s results", nearbyPlaces.getResults().size()));
+                    log.info(String.format("%s...", nearbyPlaces.getResults().get(0).get("name")));
+                }
+                lastId = (String) nearbyPlaces.getResults().get(0).get("place_id");
                 pageToken = nearbyPlaces.getNext_page_token();
                 resultSize = nearbyPlaces.getResults().size();
                 numberOfPlaces += resultSize;
@@ -74,7 +83,7 @@ public class ScoringController {
                 }).collect(Collectors.toList());
                 response.getCoordinates().addAll(places);
                 if (resultSize >= PlacesApi.PAGE_SIZE) {
-                    TimeUnit.SECONDS.sleep(PlacesApi.TIMEOUT);
+                    TimeUnit.MILLISECONDS.sleep(timeout);
                 }
             } while (numberOfPlaces >= MAX_PLACES || resultSize >= PlacesApi.PAGE_SIZE);
             numbersOfPlaces.add(numberOfPlaces);
@@ -94,6 +103,10 @@ public class ScoringController {
         */
         double score = calculateWeightedAverage(numbersWithWeights);
         response.setScore(score);
+        response.setCoordinates(response.getCoordinates()
+                .stream()
+                .sorted(Comparator.comparing(PersonalLocationResponseDto.Coordinates::getName))
+                .collect(Collectors.toList()));
         return ResponseEntity.ok(response);
     }
 

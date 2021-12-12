@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(name = "googlePlacesApi", configuration = FeignConfig.class, url = "https://maps.googleapis.com/maps/api?key=${google.api.key}")
 public interface PlacesApi {
-    int TIMEOUT = 2; //seconds
+    int TIMEOUT = 2000; //milliseconds
     int PAGE_SIZE = 20;
 
     @GetMapping(path = "place/nearbysearch/json")
