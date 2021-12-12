@@ -33,7 +33,7 @@ public class ScoringController {
     public ResponseEntity getScoreForPersonalLocation(
             @RequestParam String streetName,
             @RequestParam String streetNumber,
-            @RequestParam(required = false, defaultValue = "100") int radius,
+            @RequestParam(required = false, defaultValue = "1000") int radius,
             @RequestParam(required = false) List<String> keywords
     ) throws InterruptedException {
         ResponseDto addressDetails = placesApi.getAddressDetails(String.format("%s %s %s", streetName, streetNumber, CITY));
